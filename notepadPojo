@@ -1,0 +1,602 @@
+package com.gui;
+
+import java.awt.FileDialog;
+import java.awt.Font;
+import java.awt.Image;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+
+import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+
+public class NotepadImpl {
+	JFrame frame;
+
+	JTextArea textArea;
+
+	JMenuBar menubar;
+
+	JMenu fileMenu, languageMenu, formatMenu, commandPromptMenu;
+
+	// File MenuItems
+	JMenuItem itemNew, itemNewWindow, itemOpen, itemSaveAs, itemSave, itemExit;
+
+	// Format menu items
+	JMenuItem itemWordWrap;
+
+	JMenu itemFont;
+
+	JMenu itemFontsize;
+
+	// Command Prompt menu items
+	JMenuItem itemCMD;
+
+	Font arial, timesNewRoman, consolas;
+
+	String fontStyle = "Arial";
+
+	int fontSize = 25;
+
+	String openFile = null;
+
+	String openPath = null;
+
+	boolean wrap = false;
+
+	//No argument constructor
+	
+	public NotepadImpl() {
+		
+		//create frame
+		createFrame();
+
+		//create text area
+		createTextArea();
+
+		
+		createScrollBars();
+
+		createMenuBar();
+
+		createFileMenuItems();
+
+		createFormatItems();
+
+		createCommandPromptItem();
+
+		createLanguageItems();
+
+	}
+
+	public void createFrame() {
+		frame = new JFrame("Notepad-Clone");
+
+		frame.setSize(700, 500);
+
+		frame.setVisible(true);
+
+		Image icon = Toolkit.getDefaultToolkit().getImage("C:\\Users\\user\\internship\\NotepadClone\\notepadicon.PNG");
+
+		frame.setIconImage(icon);
+
+		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
+	}
+
+	public void createTextArea() {
+		textArea = new JTextArea();
+
+		frame.add(textArea);
+
+		textArea.setFont(new Font(fontStyle, Font.PLAIN, fontSize));
+
+	}
+
+	public void createScrollBars() {
+
+		JScrollPane scroll = new JScrollPane(textArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+
+		frame.add(scroll);
+	}
+
+	//method to create menu bar with options
+	
+	public void createMenuBar() {
+		
+		menubar = new JMenuBar();
+
+		frame.setJMenuBar(menubar);
+
+		fileMenu = new JMenu("File");
+
+		menubar.add(fileMenu);
+
+		languageMenu = new JMenu("Languages");
+
+		menubar.add(languageMenu);
+
+		formatMenu = new JMenu("Format");
+
+		menubar.add(formatMenu);
+
+		commandPromptMenu = new JMenu("Command Prompt");
+
+		menubar.add(commandPromptMenu);
+
+	}
+
+	//method to create file menu items
+	
+	public void createFileMenuItems() {
+		
+		itemNew = new JMenuItem("New");
+
+		fileMenu.add(itemNew);
+
+		itemNew.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+
+				textArea.setText("");
+
+				frame.setTitle("Untitled Notepad");
+
+				openPath = null;
+
+				openFile = null;
+			}
+		});
+
+		itemNewWindow = new JMenuItem("New Window");
+
+		fileMenu.add(itemNewWindow);
+
+		itemNewWindow.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+
+				NotepadImpl notepad = new NotepadImpl();
+
+				notepad.frame.setTitle("Untitled");
+			}
+		});
+		itemOpen = new JMenuItem("Open");
+
+		fileMenu.add(itemOpen);
+
+		itemOpen.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+
+				FileDialog fd = new FileDialog(frame, "Open", FileDialog.LOAD);
+
+				fd.setVisible(true);
+
+				String path = fd.getDirectory();
+
+				String fileName = fd.getFile();
+
+				System.out.println(path + fileName);
+
+				if (fileName != null) {
+					frame.setTitle(fileName);
+
+					openFile = fileName;
+
+					openPath = path;
+
+				}
+
+				BufferedReader br = null;
+
+				try {
+					br = new BufferedReader(new FileReader(openPath + openFile));
+
+					String line = br.readLine();
+
+					textArea.setText("");
+
+					while (line != null) {
+						textArea.append(line + "\n");
+
+						line = br.readLine();
+					}
+
+					System.out.println("Successfully found file for reading");
+
+				} catch (FileNotFoundException e1) {
+					System.out.println("Failed to find file for reading");
+				} catch (IOException e1) {
+					System.out.println("File reading failed");
+				}
+
+				finally {
+					try {
+						br.close();
+
+						System.out.println("br closed successfully");
+
+					} catch (IOException e1) {
+						System.out.println("Failed to close br");
+
+					} catch (NullPointerException np) {
+						System.out.println("br object not initialized");
+					}
+				}
+			}
+		});
+
+		itemSaveAs = new JMenuItem("Save as");
+
+		fileMenu.add(itemSaveAs);
+
+		itemSaveAs.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				FileDialog fd = new FileDialog(frame, "Save as", FileDialog.SAVE);
+
+				fd.setVisible(true);
+
+				String path = fd.getDirectory();
+
+				String file = fd.getFile();
+
+				if (file != null && path != null) {
+					writeData(path, file);
+
+					openFile = file;
+
+					openPath = path;
+
+					frame.setTitle(openPath);
+
+				}
+			}
+		});
+
+		itemSave = new JMenuItem("Save");
+
+		fileMenu.add(itemSave);
+
+		itemSave.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (openFile != null && openPath != null) {
+					writeData(openPath, openFile);
+				} else {
+					FileDialog fd = new FileDialog(frame, "Save AS", FileDialog.SAVE);
+					fd.setVisible(true);
+					String path = fd.getDirectory();
+					String fileName = fd.getFile();
+					if (path != null && fileName != null) {
+						writeData(path, fileName);
+						openFile = fileName;
+						openPath = path;
+						frame.setTitle(openFile);
+					}
+				}
+			}
+		});
+		itemExit = new JMenuItem("Exit");
+		fileMenu.add(itemExit);
+		itemExit.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				frame.dispose();
+			}
+		});
+	}
+
+	public void createFormatItems() {
+		itemWordWrap = new JMenuItem("Word Wrap off");
+		formatMenu.add(itemWordWrap);
+		itemWordWrap.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (wrap == false) {
+					textArea.setLineWrap(true);
+					textArea.setWrapStyleWord(true);
+					wrap = true;
+					itemWordWrap.setText("Word Wrap on");
+				} else {
+					textArea.setLineWrap(false);
+					textArea.setWrapStyleWord(false);
+					wrap = false;
+					itemWordWrap.setText("Word Wrap off");
+				}
+			}
+		});
+		itemFontsize = new JMenu("Font Size");
+		formatMenu.add(itemFontsize);
+		JMenuItem size10 = new JMenuItem("10");
+		itemFontsize.add(size10);
+		size10.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				setFontSize(10);
+			}
+		});
+
+		JMenuItem size14 = new JMenuItem("14");
+		size14.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				setFontSize(14);
+			}
+		});
+		itemFontsize.add(size14);
+		JMenuItem size18 = new JMenuItem("18");
+		itemFontsize.add(size18);
+		size18.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				setFontSize(18);
+			}
+		});
+		JMenuItem size20 = new JMenuItem("20");
+		itemFontsize.add(size20);
+		size20.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				setFontSize(20);
+			}
+		});
+		JMenuItem size24 = new JMenuItem("24");
+		itemFontsize.add(size24);
+		size24.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				setFontSize(24);
+			}
+		});
+
+		JMenuItem size28 = new JMenuItem("28");
+		itemFontsize.add(size28);
+		size28.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				setFontSize(28);
+			}
+		});
+		JMenuItem size32 = new JMenuItem("32");
+		itemFontsize.add(size32);
+		size32.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				setFontSize(32);
+			}
+		});
+		itemFont = new JMenu("Font");
+		formatMenu.add(itemFont);
+		JMenuItem itemArial = new JMenuItem("Arial");
+		itemFont.add(itemArial);
+		itemArial.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				setFontType("Arial");
+			}
+		});
+		JMenuItem itemTimesNewRoman = new JMenuItem("Times New Roman");
+		itemFont.add(itemTimesNewRoman);
+		itemTimesNewRoman.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				setFontType("Times New Roman");
+			}
+		});
+		JMenuItem itemConsolas = new JMenuItem("Consolas");
+		itemFont.add(itemConsolas);
+		itemConsolas.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				setFontType("Consolas");
+			}
+		});
+	}
+
+	// method to create command prompt menu item
+	public void createCommandPromptItem() {
+		itemCMD = new JMenuItem("Open Command Prompt");
+
+		commandPromptMenu.add(itemCMD);
+
+		itemCMD.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				try {
+
+					if (openPath != null)
+
+					{
+						Runtime.getRuntime().exec(new String[] { "cmd", "/k", "start" }, null, new File(openPath)); // /k
+																													// is
+																													// used
+																													// to
+																													// keep
+																													// cmd
+																													// open
+
+						System.out.println("Launched CMD");
+					} else {
+						Runtime.getRuntime().exec(new String[] { "cmd", "/k", "start" }, null, null); // /k is used to
+																										// keep cmd open
+						System.out.println("Launched CMD");
+					}
+				} catch (IOException e1) {
+					System.out.println("Could not launch CMD");
+				}
+			}
+		});
+	}
+
+	public void writeData(String path, String file) {
+		if (file != null && path != null) {
+			BufferedWriter bw = null;
+
+			try {
+				bw = new BufferedWriter(new FileWriter(path + file));
+
+				String data = textArea.getText();
+
+				bw.write(data);
+
+			} catch (IOException e1) {
+				System.out.println("Data failed to write");
+			} finally {
+				try {
+					bw.close();
+				} catch (IOException e1) {
+					System.out.println("Failed to close");
+				} catch (NullPointerException np) {
+					System.out.println("file not found to close");
+				}
+			}
+		}
+	}
+
+	// method to set the font sizes
+
+	public void setFontSize(int size) {
+		arial = new Font("Arial", Font.PLAIN, size);
+
+		timesNewRoman = new Font("Times New Roman", Font.PLAIN, size);
+
+		consolas = new Font("Consolas", Font.PLAIN, size);
+
+		setFontType(fontStyle);
+	}
+
+	// method to set font type Arial, times new roman, consolas etc
+
+	public void setFontType(String fontName) {
+		fontStyle = fontName;
+
+		switch (fontName) {
+		case "Arial": {
+			textArea.setFont(arial);
+
+			break;
+		}
+
+		case "Times New Roman": {
+			textArea.setFont(timesNewRoman);
+			break;
+		}
+		case "Consolas": {
+
+			textArea.setFont(consolas);
+
+			break;
+		}
+		default:
+
+		}
+	}
+
+	// method to create Language menu items
+
+	public void createLanguageItems() {
+		JMenuItem itemJava = new JMenuItem("Java");
+
+		languageMenu.add(itemJava);
+
+		itemJava.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				setLanguage("Java");
+			}
+		});
+
+		JMenuItem itemHtml = new JMenuItem("Html");
+
+		languageMenu.add(itemHtml);
+		itemHtml.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				setLanguage("Html");
+			}
+		});
+
+		JMenuItem itemC = new JMenuItem("C");
+
+		languageMenu.add(itemC);
+
+		itemC.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				setLanguage("C");
+			}
+		});
+
+		JMenuItem itemCpp = new JMenuItem("C++");
+
+		languageMenu.add(itemCpp);
+
+		itemCpp.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				setLanguage("CPP");
+			}
+		});
+	}
+
+	public void setLanguage(String language) {
+		BufferedReader br = null;
+
+		try {
+
+			br = new BufferedReader(new FileReader("D:\\filehandle\\" + language + "Format.txt"));
+
+			String line = br.readLine();
+
+			textArea.setText("");
+
+			while (line != null) {
+				textArea.append(line + "\n");
+
+				line = br.readLine();
+			}
+
+			System.out.println("Successfully found file for reading");
+		}
+
+		catch (FileNotFoundException e1)
+
+		{
+			System.out.println("Failed to find file for reading");
+		} catch (IOException e1) {
+			System.out.println("File reading failed");
+		}
+
+		finally {
+			try {
+				br.close();
+
+				System.out.println("br closed successfully");
+
+			} catch (IOException e1) {
+				System.out.println("Failed to close br");
+
+			} catch (NullPointerException np) {
+				System.out.println("br object not initialized");
+
+			}
+		}
+	}
+}
